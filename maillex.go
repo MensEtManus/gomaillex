@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-//	"regexp"
+	"regexp"
 	"os"
 	"io/ioutil"
 	"strings"
@@ -10,6 +10,13 @@ import (
 
 const usageMsg string = "usage: gomaillex maillog[filename] -option\n" + 
 						"-option: -s [summary]\n"
+
+// Constants of Regular Expression Patterns
+const smtpRegex string = "postfix/smtp\\[\\d+\\]"
+const smtpdRegex string = "postfix/smtpd\\[\\d+\\]"
+
+var postfixsmtp = regexp.MustCompile(smtpRegex)
+var postfixsmtpd = regexp.MustCompile(smtpdRegex)
 
 func usage() {
 	fmt.Printf(usageMsg)
@@ -40,6 +47,17 @@ func openFile(file string) []string {
 // And obtain the information needed
 func parse(data []string) {
    fmt.Printf("Start parsing....\n")
+   for i := 0; i < len(data); i++ {
+   	/*	var line []string = strings.Split(data[i], " ")
+   		for j := 0; j < len(line); j++ {
+
+   		}
+   	*/	
+   		var smtp string = postfixsmtpd.FindString(data[i])
+   		if  smtp != "" {
+   			fmt.Printf(data[i] + "\n")
+   		}
+   }
 
 }
 
