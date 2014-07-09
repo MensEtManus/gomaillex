@@ -22,16 +22,25 @@ func check(e error) {
 	}
 }
 
-// Parse the selected log file 
-// And obtain the information needed
-func parser(file string) {
-    dat, err := ioutil.ReadFile(file)
+// Read data from the file 
+// Split file data by newline
+// Return an array of lines of strings
+func openFile(file string) []string {
+	dat, err := ioutil.ReadFile(file)
     check(err)
- //   fmt.Print(string(dat))
+//    fmt.Print(string(dat))
     fmt.Print("\n")
 
     var data []string = strings.Split(string(dat), "\n")
     fmt.Printf("num of lines: %d\n", len(data))
+    return data
+}
+
+// Parse the selected log file 
+// And obtain the information needed
+func parse(data []string) {
+   fmt.Printf("Start parsing....\n")
+
 }
 
 func main() {
@@ -42,7 +51,8 @@ func main() {
 		usage()
 	}
 	var file string = args[1]
-	parser(file)
+	var data []string = openFile(file)
+	parse(data)
 
 	for i := 0; i < len(args); i++ {
 		fmt.Printf("%s\n", args[i])
