@@ -1,0 +1,22 @@
+Jun 29 03:10:03 RHL058 sendmail[3569]: s5T68YTv003569: from=<no-reply@grooveshark.com>, size=25274, class=0, nrcpts=1, msgid=<1404025803.53afbbcb667b9@swift.generated>, proto=SMTP, relay=root@localhost
+Jun 29 03:10:03 RHL058 postfix/smtpd[25080]: C05A07C2CA0: client=localhost[127.0.0.1]
+Jun 29 03:10:03 RHL058 postfix/cleanup[12555]: C05A07C2CA0: message-id=<1404025803.53afbbcb667b9@swift.generated>
+Jun 29 03:10:03 RHL058 sendmail[3569]: s5T68YTv003569: to=<t.k.custom3@gmail.com>, delay=00:00:00, xdelay=00:00:00, mailer=relay, pri=55274, relay=[127.0.0.1] [127.0.0.1], dsn=2.0.0, stat=Sent (Ok: queued as C05A07C2CA0)
+Jun 29 03:10:03 RHL058 postfix/qmgr[14505]: C05A07C2CA0: from=<no-reply@grooveshark.com>, size=26493, nrcpt=1 (queue active)
+Jun 29 03:10:03 RHL058 postfix/smtp[21304]: connect to gmail-smtp-in.l.google.com[2607:f8b0:4003:c01::1b]:25: Network is unreachable
+Jun 29 03:10:04 RHL058 postfix/smtp[21304]: C05A07C2CA0: to=<t.k.custom3@gmail.com>, relay=gmail-smtp-in.l.google.com[173.194.77.27]:25, delay=0.85, delays=0.07/0/0.07/0.71, dsn=2.0.0, status=sent (250 2.0.0 OK 1404025804 lb8si19749612oeb.35 - gsmtp)
+Jun 29 03:10:04 RHL058 postfix/qmgr[14505]: C05A07C2CA0: removed
+Jun 29 03:10:06 RHL058 sendmail[3691]: s5T46jeD003691: from=<no-reply@grooveshark.com>, size=9340, class=0, nrcpts=1, msgid=<1404025806.53afbbce34fdf@swift.generated>, proto=SMTP, relay=root@localhost
+Jun 29 03:10:06 RHL058 postfix/smtpd[11262]: 5A9917C2CA0: client=localhost[127.0.0.1]
+Jun 29 03:10:06 RHL058 postfix/cleanup[12556]: 5A9917C2CA0: message-id=<1404025806.53afbbce34fdf@swift.generated>
+Jun 29 03:10:06 RHL058 sendmail[3691]: s5T46jeD003691: to=<dragon2010_2001@yahoo.com>, delay=00:00:00, xdelay=00:00:00, mailer=relay, pri=39340, relay=[127.0.0.1] [127.0.0.1], dsn=2.0.0, stat=Sent (Ok: queued as 5A9917C2CA0)
+Jun 29 03:10:06 RHL058 postfix/qmgr[14505]: 5A9917C2CA0: from=<no-reply@grooveshark.com>, size=10078, nrcpt=1 (queue active)
+Jun 29 03:10:07 RHL058 postfix/smtp[21353]: 5A9917C2CA0: to=<dragon2010_2001@yahoo.com>, relay=mta7.am0.yahoodns.net[98.136.217.202]:25, delay=1.5, delays=0.06/0/0.1/1.3, dsn=2.0.0, status=sent (250 ok dirdel)
+Jun 29 03:10:07 RHL058 postfix/qmgr[14505]: 5A9917C2CA0: removed
+Jun 29 03:10:13 RHL058 sendmail[3569]: s5T68YTw003569: from=<no-reply@grooveshark.com>, size=25452, class=0, nrcpts=1, msgid=<1404025813.53afbbd571a44@swift.generated>, proto=SMTP, relay=root@localhost
+Jun 29 03:10:13 RHL058 postfix/smtpd[25080]: C03297C2CA0: client=localhost[127.0.0.1]
+Jun 29 03:10:13 RHL058 postfix/cleanup[14986]: C03297C2CA0: message-id=<1404025813.53afbbd571a44@swift.generated>
+Jun 29 03:10:13 RHL058 sendmail[3569]: s5T68YTw003569: to=<q.debalincourt@gmail.com>, delay=00:00:00, xdelay=00:00:00, mailer=relay, pri=55452, relay=[127.0.0.1] [127.0.0.1], dsn=2.0.0, stat=Sent (Ok: queued as C03297C2CA0)
+Jun 29 03:10:13 RHL058 postfix/qmgr[14505]: C03297C2CA0: from=<no-reply@grooveshark.com>, size=26679, nrcpt=1 (queue active)
+Jun 29 03:10:13 RHL058 postfix/smtp[21349]: connect to gmail-smtp-in.l.google.com[2607:f8b0:4003:c01::1b]:25: Network is unreachable
+Jun 29 03:10:14 RHL058 postfix/smtp[21349]: C03297C2CA0: to=<q.debalincourt@gmail.com>, relay=gmail-smtp-in.l.google.com[173.194.77.27]:25, delay=0.46, delays=0.06/0/0.08/0.33, dsn=2.0.0, status=sent (250 2.0.0 OK 1404025814 x5si20862389oeq.80 - gsmtp)
