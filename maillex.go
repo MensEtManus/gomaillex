@@ -21,7 +21,7 @@ const toRex string = "to=<([^>]+){1}>"
 const sizeRegex string = "size=([0-9]+){1}"
 const statusRegex string = "status=([^ ]+){1}"
 const dateRegex string = "^(\\w{3}[^a-zA-Z]+)"
-const idRegex string = "([a-f0-9]{11}){1}$"
+const idRegex string = "[A-F0-9]{11}"
 const clientRegex string = "client=.*?\\[([0-9.]+)+\\]"
 
 // Regular Expression Variables
@@ -44,7 +44,7 @@ var clientHostIP = regexp.MustCompile(clientRegex)
 ***************************************************/
 
 // email struct to hold info about one email
-type email struct {
+type Email struct {
     queueID string    // message id processed by Postfix
     sender string 	  // address of the sender
     receiver string   // address of the receiver
@@ -52,9 +52,12 @@ type email struct {
     date string       // date and time 
   	emailType string  // outgoing email or incoming email
 }
+// email type vars
 var outgoing string = "outgoing"
 var incoming string = "incoming"
-var emailList []email  // slice of email structs
+
+var emailList []Email    // slice of email structs
+
 
 func usage() {
 	fmt.Printf(usageMsg)
@@ -65,6 +68,27 @@ func check(e error) {
 	if e != nil {
 		panic(e)
 	}
+}
+
+// check if the queue ID already exists in the email list
+func hasEmailID(list []Email, id string) bool {
+	for _, email := range list {
+		if email.queueID == id {
+			return true
+		}
+	}
+	return false
+}
+
+// find the index of an email in the email list
+func findEmailIndex(list []Email, id string) int {
+	var index int
+	for i, email := range list {
+		if email.queueID == id {
+			index = i
+		}
+	}
+	return index 
 }
 
 // Read data from the file 
@@ -88,10 +112,13 @@ func parse(data []string) {
    var smtp, smtpd, cleanup, qmgr string
    var from, to, size, status, date string
    var client string    // Hostname and IP address of the clients connected to the SMTP daemon
+   var qID string       // queue ID of each email 
+   var emailIndex int    // index of the email in the email list
 
+   // Loop through all the lines to obtain info needed
    for i := 0; i < len(data); i++ {
 
-   		// find matching strings from the  line 
+   		// find matching strings from the current line 
    		smtp = postfixsmtp.FindString(data[i])
    		smtpd = postfixsmtpd.FindString(data[i])
    		cleanup = postfixcleanup.FindString(data[i])
@@ -102,18 +129,32 @@ func parse(data []string) {
    		status = sendStatus.FindString(data[i])
    		date = dateInfo.FindString(data[i])
    		client = clientHostIP.FindString(data[i])
-   
+   		qID = postfixID.FindString(data[i])
+
+
+   		if qID != "" {
+   			// if the email is NOT in emailList 
+   			if !hasEmailID(emailList, qID) {
+   				emailList = append(emailList, Email{queueID: qID})
+   			} else {
+   				emailIndex = findEmailIndex(emailList, qID)
+   			}
+   		}
+   		
    	
    		// the Host/IP Address of the client connected to the SMTP daemon
    		if smtpd != "" {
-   		//	fmt.Printf("\n")
    			if client != "" {
    				islocal, _ := regexp.MatchString("client=localhost.*", client)
    				if islocal {
-   					fmt.Println("localhost\n")
+   					emailList[emailIndex].emailType = outgoing
+   				} else {
+   					emailList[emailIndex].emailType = incoming
    				}
    				
    			}
+   			
+
    		}
 
    		// the msg id of the currently processed email
@@ -152,6 +193,7 @@ func main() {
 	}
 	var file string = args[1]
 	var data []string = openFile(file)
+
 	parse(data)
 
 	for i := 0; i < len(args); i++ {
