@@ -48,22 +48,24 @@ var messageID = regexp.MustCompile(msgIDRegex)
 
 // email struct to hold info about one email
 type Email struct {
-    queueID    string       // message id processed by Postfix
-    sender     string 	    // address of the sender
-    receiver   string       // address of the receiver
-    size       int          // size of the email
-    date       string       // date and time email
-    //    smtpd      bool         // if true is inbound email 
-    cleanup    []string     // store info when inbound email gets cleaned up 
-    status     string       // status of the processed email
-    msgID      string       // message id of the inbound email
-  	emailType  string       // outgoing email or incoming 
+    queueID    			string       // message id processed by Postfix
+    sender     			string 	     // address of the sender
+    receiver   			string       // address of the receiver
+    size       			int          // size of the email
+    date       			string       // date and time email
+   	client              []string       // client hostname and IP address for inbound email
+    cleanup    			[]string       // store info when inbound email gets cleaned up 
+    status     			string       // status of the processed email
+    msgID      			string       // message id of the inbound email
+  	emailType  			string       // outgoing email or incoming 
 }
 // email type vars
 var outgoing string = "outgoing"
 var incoming string = "incoming"
 
-var emailList []Email    // slice of email structs
+var emailIn  []Email  // global variable for slice of incoming emails
+var emailOut []Email  // global variable for slice of outgoing emails
+
 
 
 func usage() {
@@ -98,6 +100,25 @@ func findEmailIndex(list []Email, id string) int {
 	return index 
 }
 
+// print info in Email 
+func printEmail(emails []Email) {
+	fmt.Println("                           Email List Info")
+	fmt.Println("----------------------------------------------------------------------------------------")
+	for i, email := range emails {
+		fmt.Println(i)
+		fmt.Println("From: " + email.sender)
+		fmt.Println("To: " + email.receiver)
+		fmt.Print("Size: ")
+		fmt.Println(email.size)
+		fmt.Println("Date: " + email.date)
+		fmt.Println("Status: " + email.status)
+		fmt.Println("Host Name: " + email.client[0])
+		fmt.Println("IP address: " + email.client[1])
+		fmt.Println("In/Out: " + email.emailType)
+		fmt.Println()
+	}	
+}
+
 // Read data from the file 
 // Split file data by newline
 // Return an array of lines of strings
@@ -122,9 +143,7 @@ func parse(data []string) {
    var qID string       // queue ID of each email 
    var mID string       // message id of the inbound email
    var emailIndex int = -1   // index of the email in the email list
-   var income int = 0
-   var out int = 0
-   var total int = 0
+   var count int = 0
    // Loop through all the lines to obtain info needed
    for i := 0; i < len(data); i++ {
 
@@ -145,7 +164,22 @@ func parse(data []string) {
    		if qID != "" {
    			// if the email is NOT in emailList 
    			if !hasEmailID(emailList, qID) {
-   				emailList = append(emailList, Email{queueID: qID})
+   				// create a new email and initialize it
+   			
+   				clientSlice := make([]string, 2)
+   				cleanupSlice := make([]string, 2) 
+
+   				email := Email{queueID: qID,
+   							   sender: "",
+   							   receiver: "",
+   							   size: 0,
+   							   date: "",
+   							   client: clientSlice,
+   							   cleanup: cleanupSlice,
+   							   status: "",
+   							   msgID: "",
+   							   emailType: ""}
+   				emailList = append(emailList, email)
    			} else {
    				emailIndex = findEmailIndex(emailList, qID)
    			}
@@ -154,15 +188,27 @@ func parse(data []string) {
    	
    		// the Host/IP Address of the client connected to the SMTP daemon
    		if smtpd != "" {
+   			fmt.Printf(data[i])
    			if client != "" {
-   				islocal, _ := regexp.MatchString("client=localhost.*", client)
-   				if islocal {
+   				
+   				startHost := strings.Index(client, "=") + 1
+   				startIP := strings.Index(client, "[") + 1
+   				endHost := startIP - 1
+   				endIP := len(client) - 1
+   				hostname := client[startHost: endHost]
+   				IPaddress := client[startIP: endIP]
+   				hostIP := []string{hostname, IPaddress}
 
-   				}
+   				if emailIndex != -1 {
+   					emailList[emailIndex].client[0] = hostIP[0]
+   					emailList[emailIndex].client[1] = hostIP[1]
+   	
+   				}				
    			}
-   		
+
    			if emailIndex != -1 {
    				emailList[emailIndex].emailType = incoming	
+   				count++
    			}
    		}
 
@@ -172,27 +218,33 @@ func parse(data []string) {
    			if mID != "" {
    				if emailIndex != -1 {
    					emailList[emailIndex].msgID = mID
-   					fmt.Println(mID)
+   				//	fmt.Println(mID)
    				}
+   			
+   				
    			}
    		}
 
    		// the time an email was removed from que or its size, sender and number of recipients
    		if qmgr != "" {
-   		//	fmt.Println(data[i])
    			// deal with incoming email
    			if emailList[emailIndex].emailType == incoming {
    				if from != "" {
    					emailList[emailIndex].sender = from[6: (len(from) - 1)]
-   					fmt.Println(from[6: (len(from) - 1)])
    				}
    				if size != "" {
    					msgSize, err := strconv.Atoi(size[5: len(size)])
    					if err == nil {
    						emailList[emailIndex].size = msgSize
-   					}
+   					}	
+   				}
+   				if date != "" {
+   					emailList[emailIndex].date = date
+   				}
+   			} else {
    				
-   					fmt.Println(size[5: len(size)])
+   				if date != "" {
+   					emailList[emailIndex].date = date
    				}
    			}
    			
@@ -202,17 +254,22 @@ func parse(data []string) {
    		// detailed info about destination, delay, relay and status etc
    		if  smtp != "" {
    		//	fmt.Println(data[i])
+
    			if to != "" {
-   				fmt.Printf(date + "---")
+   				
    				fmt.Printf(to + "   ")
    				fmt.Printf(status[7:] + "\n")
+   				
    			}
-   			
+/*
+   			if emailIndex != -1 {
+   				emailList[emailIndex].emailType = outgoing	
+   			}
+*/   			
+
    		}
    }
-   fmt.Println("Inbound mails num: ", income)
-   fmt.Println("Outgoing emails num: ", out)
-   fmt.Println("Total emails: ", total)
+   fmt.Println(count)
 }
 
 func main() {
@@ -224,8 +281,10 @@ func main() {
 	}
 	var file string = args[1]
 	var data []string = openFile(file)
-
+	
 	parse(data)
+//	printEmail(emailList)
+	fmt.Println()
 
 	for i := 0; i < len(args); i++ {
 		fmt.Printf("%s\n", args[i])
