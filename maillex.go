@@ -53,9 +53,8 @@ type Email struct {
     receiver   			string       // address of the receiver
     size       			int          // size of the email
     date       			string       // date and time email
-   	clientHostName      string       // client hostname for inbound email
-   	clientIP   			string       // client host IP Address for inbound email
-    cleanup    			string       // store info when inbound email gets cleaned up 
+   	client              []string       // client hostname and IP address for inbound email
+    cleanup    			[]string       // store info when inbound email gets cleaned up 
     status     			string       // status of the processed email
     msgID      			string       // message id of the inbound email
   	emailType  			string       // outgoing email or incoming 
@@ -100,6 +99,7 @@ func findEmailIndex(list []Email, id string) int {
 	return index 
 }
 
+/*
 // Initialization of an Email struct
 func (email Email) emailInit(){
 	email.queueID = ""
@@ -113,7 +113,7 @@ func (email Email) emailInit(){
 	email.status = ""
 	email.msgID = ""
 	email.emailType = ""
-}
+}*/
 
 // Read data from the file 
 // Split file data by newline
@@ -163,20 +163,17 @@ func parse(data []string) {
    			// if the email is NOT in emailList 
    			if !hasEmailID(emailList, qID) {
    				// create a new email and initialize it
-   			/*	email := new(Email)
-   				email.emailInit()
-   				email.queueID = qID 
+   			
    				clientSlice := make([]string, 2)
-   				cleanupSlice := make([]string, 2) */
+   				cleanupSlice := make([]string, 2) 
 
    				email := Email{queueID: qID,
    							   sender: "",
    							   receiver: "",
    							   size: 0,
    							   date: "",
-   							   clientHostName: "",
-   							   clientIP: "",
-   							   cleanup: "",
+   							   client: clientSlice,
+   							   cleanup: cleanupSlice,
    							   status: "",
    							   msgID: "",
    							   emailType: ""}
@@ -199,16 +196,10 @@ func parse(data []string) {
    				IPaddress := client[startIP: endIP]
    				hostIP := []string{hostname, IPaddress}
 
-   				fmt.Println(hostIP)
-   				fmt.Println("what??")
-   				fmt.Println(emailIndex)
    				if emailIndex != -1 {
-   					emailList[emailIndex].clientHostName = hostname
-   					emailList[emailIndex].clientIP = IPaddress
-   				}
-   			
-
-   				
+   					emailList[emailIndex].client = append(emailList[emailIndex].client, hostIP[0], hostIP[1])
+   	
+   				}				
    			}
    		
    			if emailIndex != -1 {
