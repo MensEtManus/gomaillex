@@ -63,7 +63,8 @@ type Email struct {
 var outgoing string = "outgoing"
 var incoming string = "incoming"
 
-var emailList []Email  // global variable for slice of emails
+var emailIn  []Email  // global variable for slice of incoming emails
+var emailOut []Email  // global variable for slice of outgoing emails
 
 
 
@@ -111,6 +112,8 @@ func printEmail(emails []Email) {
 		fmt.Println(email.size)
 		fmt.Println("Date: " + email.date)
 		fmt.Println("Status: " + email.status)
+		fmt.Println("Host Name: " + email.client[0])
+		fmt.Println("IP address: " + email.client[1])
 		fmt.Println("In/Out: " + email.emailType)
 		fmt.Println()
 	}	
@@ -185,8 +188,9 @@ func parse(data []string) {
    	
    		// the Host/IP Address of the client connected to the SMTP daemon
    		if smtpd != "" {
+   			fmt.Printf(data[i])
    			if client != "" {
-   				fmt.Println(client)
+   				
    				startHost := strings.Index(client, "=") + 1
    				startIP := strings.Index(client, "[") + 1
    				endHost := startIP - 1
@@ -196,13 +200,15 @@ func parse(data []string) {
    				hostIP := []string{hostname, IPaddress}
 
    				if emailIndex != -1 {
-   					emailList[emailIndex].client = append(emailList[emailIndex].client, hostIP[0], hostIP[1])
+   					emailList[emailIndex].client[0] = hostIP[0]
+   					emailList[emailIndex].client[1] = hostIP[1]
    	
    				}				
    			}
-   		
+
    			if emailIndex != -1 {
    				emailList[emailIndex].emailType = incoming	
+   				count++
    			}
    		}
 
@@ -212,8 +218,10 @@ func parse(data []string) {
    			if mID != "" {
    				if emailIndex != -1 {
    					emailList[emailIndex].msgID = mID
-   					fmt.Println(mID)
+   				//	fmt.Println(mID)
    				}
+   			
+   				
    			}
    		}
 
@@ -253,11 +261,11 @@ func parse(data []string) {
    				fmt.Printf(status[7:] + "\n")
    				
    			}
-
+/*
    			if emailIndex != -1 {
    				emailList[emailIndex].emailType = outgoing	
    			}
-   			
+*/   			
 
    		}
    }
@@ -275,7 +283,7 @@ func main() {
 	var data []string = openFile(file)
 	
 	parse(data)
-	printEmail(emailList)
+//	printEmail(emailList)
 	fmt.Println()
 
 	for i := 0; i < len(args); i++ {
