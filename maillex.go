@@ -140,7 +140,7 @@ func parse(data []string) {
    var qID string       // queue ID of each email 
    var mID string       // message id of the inbound email
    var emailIndex int = -1   // index of the email in the email list
-
+   var count int = 0
    // Loop through all the lines to obtain info needed
    for i := 0; i < len(data); i++ {
 
@@ -251,13 +251,17 @@ func parse(data []string) {
    				
    				fmt.Printf(to + "   ")
    				fmt.Printf(status[7:] + "\n")
+   				
    			}
 
    			if emailIndex != -1 {
    				emailList[emailIndex].emailType = outgoing	
    			}
+   			
+
    		}
    }
+   fmt.Println(count)
 }
 
 func main() {
