@@ -99,21 +99,22 @@ func findEmailIndex(list []Email, id string) int {
 	return index 
 }
 
-/*
-// Initialization of an Email struct
-func (email Email) emailInit(){
-	email.queueID = ""
-	email.sender = "" 
-	email.receiver = ""
-	email.size = 0
-	email.date = ""
-	email.clientHostName = ""
-	email.clientIP = ""
-	email.cleanup = ""
-	email.status = ""
-	email.msgID = ""
-	email.emailType = ""
-}*/
+// print info in Email 
+func printEmail(emails []Email) {
+	fmt.Println("                           Email List Info")
+	fmt.Println("----------------------------------------------------------------------------------------")
+	for i, email := range emails {
+		fmt.Println(i)
+		fmt.Println("From: " + email.sender)
+		fmt.Println("To: " + email.receiver)
+		fmt.Print("Size: ")
+		fmt.Println(email.size)
+		fmt.Println("Date: " + email.date)
+		fmt.Println("Status: " + email.status)
+		fmt.Println("In/Out: " + email.emailType)
+		fmt.Println()
+	}	
+}
 
 // Read data from the file 
 // Split file data by newline
@@ -139,9 +140,7 @@ func parse(data []string) {
    var qID string       // queue ID of each email 
    var mID string       // message id of the inbound email
    var emailIndex int = -1   // index of the email in the email list
-   var income int = 0
-   var out int = 0
-   var total int = 0
+
    // Loop through all the lines to obtain info needed
    for i := 0; i < len(data); i++ {
 
@@ -233,7 +232,11 @@ func parse(data []string) {
    				}
    				if date != "" {
    					emailList[emailIndex].date = date
-   					fmt.Println(date + "---")
+   				}
+   			} else {
+   				
+   				if date != "" {
+   					emailList[emailIndex].date = date
    				}
    			}
    			
@@ -243,17 +246,18 @@ func parse(data []string) {
    		// detailed info about destination, delay, relay and status etc
    		if  smtp != "" {
    		//	fmt.Println(data[i])
+
    			if to != "" {
    				
    				fmt.Printf(to + "   ")
    				fmt.Printf(status[7:] + "\n")
    			}
-   			
+
+   			if emailIndex != -1 {
+   				emailList[emailIndex].emailType = outgoing	
+   			}
    		}
    }
-   fmt.Println("Inbound mails num: ", income)
-   fmt.Println("Outgoing emails num: ", out)
-   fmt.Println("Total emails: ", total)
 }
 
 func main() {
@@ -267,6 +271,8 @@ func main() {
 	var data []string = openFile(file)
 	
 	parse(data)
+	printEmail(emailList)
+	fmt.Println()
 
 	for i := 0; i < len(args); i++ {
 		fmt.Printf("%s\n", args[i])
