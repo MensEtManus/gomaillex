@@ -25,6 +25,7 @@ const dateRegex string = "^(\\w{3}[^a-zA-Z]+)"
 const idRegex string = "[A-F0-9]{11}"
 const clientRegex string = "client=.*?\\[([0-9.]+)+\\]"
 const msgIDRegex string = "message-id=<([^>]+){1}>"
+const reasonRegex string = "status=.*?(.*)"
 
 // Regular Expression Variables
 var postfixsmtp = regexp.MustCompile(smtpRegex)
@@ -39,6 +40,7 @@ var dateInfo = regexp.MustCompile(dateRegex)
 var postfixID = regexp.MustCompile(idRegex)
 var clientHostIP = regexp.MustCompile(clientRegex)
 var messageID = regexp.MustCompile(msgIDRegex)
+var statusReason = regexp.MustCompile(reasonRegex)
 
 /**************************************************
  *
@@ -53,9 +55,10 @@ type Email struct {
     receiver   			string       // address of the receiver
     size       			int          // size of the email
     date       			string       // date and time email
-   	client              []string       // client hostname and IP address for inbound email
-    cleanup    			[]string       // store info when inbound email gets cleaned up 
+   	client              []string     // client hostname and IP address for inbound email
+    cleanup    			[]string     // store info when inbound email gets cleaned up 
     status     			string       // status of the processed email
+    reason              string       // the explanation of the delivery status
     msgID      			string       // message id of the inbound email
   	emailType  			string       // outgoing email or incoming 
 }
@@ -112,6 +115,7 @@ func printEmail(emails []Email) {
 		fmt.Println(email.size)
 		fmt.Println("Date: " + email.date)
 		fmt.Println("Status: " + email.status)
+		fmt.Println("Reason: " + email.reason)
 		fmt.Println("Host Name: " + email.client[0])
 		fmt.Println("IP address: " + email.client[1])
 		fmt.Println("In/Out: " + email.emailType)
@@ -134,6 +138,7 @@ func addEmail(emailList []Email, qID string) {
 						client: clientSlice,
 						cleanup: cleanupSlice,
 						status: "",
+						reason: "",
 						msgID: "",
 						emailType: ""}
 		emailList = append(emailList, email)
@@ -167,7 +172,8 @@ func parse(data []string) {
    var mID string       // message id of the inbound email
    var inEmailInx int = -1  // index of the email in the incoming email list
    var outEmailInx int = -1 // index of the email int the outgoing email list
-   var count int = 0
+   var statusRsn string     // reason of the email delivery status
+
    // Loop through all the lines to obtain info needed
    for i := 0; i < len(data); i++ {
 
@@ -184,6 +190,7 @@ func parse(data []string) {
    		client = clientHostIP.FindString(data[i])
    		qID = postfixID.FindString(data[i])
    		mID = messageID.FindString(data[i])
+   		statusRsn = statusReason.FindString(data[i])
    		
    		// find the email index in both incoming and outgoing email lists
    		if qID != "" {
@@ -232,7 +239,6 @@ func parse(data []string) {
    					emailIn[inEmailInx].client[0] = hostIP[0]
    					emailIn[inEmailInx].client[1] = hostIP[1]
    					emailIn[inEmailInx].emailType = incoming	
-   				    count++
    				}				
    			}
    		}
@@ -268,16 +274,16 @@ func parse(data []string) {
    			// deal with outgoing email queue manager
    			if outEmailInx != -1 {
    				if from != "" {
-   					emailIn[inEmailInx].sender = from[6: (len(from) - 1)]
+   					emailOut[outEmailInx].sender = from[6: (len(from) - 1)]
    				}
    				if size != "" {
    					msgSize, err := strconv.Atoi(size[5: len(size)])
    					if err == nil {
-   						emailIn[inEmailInx].size = msgSize
+   						emailOut[outEmailInx].size = msgSize
    					}	
    				}
    				if date != "" {
-   					emailIn[inEmailInx].date = date
+   					emailOut[outEmailInx].date = date
    				}
    			}
    			
@@ -306,22 +312,28 @@ func parse(data []string) {
 
    				} 
    				outEmailInx = findEmailIndex(emailOut, qID)
+   				emailOut[outEmailInx].emailType = outgoing
    			}
 
    			if to != "" {
    				var endInx = strings.Index(to, ">")
    				var receiver = to[4: endInx]
+   				var rsnStart, rsnEnd int
+   				var rsn string 
+   				if statusRsn != "" {
+   					rsnStart = strings.Index(statusRsn, "(") + 1
+   					rsnEnd = len(statusRsn) - 1
+   					rsn = statusRsn[rsnStart: rsnEnd]
+   				}
    				if outEmailInx != -1 {
    					emailOut[outEmailInx].receiver = receiver
    					emailOut[outEmailInx].status = status[7:]
-
+   					emailOut[outEmailInx].reason = rsn
    				}
-   				fmt.Print(receiver)
-   				fmt.Printf("  " + status[7:] + "\n") 				
+   								
    			}		
    		}
    }
-   fmt.Println(count)
 }
 
 func main() {
@@ -335,9 +347,6 @@ func main() {
 	var data []string = openFile(file)
 	
 	parse(data)
-//	printEmail(emailList)
+    printEmail(emailOut)
 
-	for i := 0; i < len(args); i++ {
-		fmt.Printf("%s\n", args[i])
-	}
 }
