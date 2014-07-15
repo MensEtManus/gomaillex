@@ -123,30 +123,6 @@ func printEmail(emails []Email) {
 	}	
 }
 
-// Append new email into Incoming/Outgoing email List
-func addEmail(emailList []Email, qID string) {
-	if !hasEmailID(emailList, qID) {
-   				// create a new email and initialize it
-		clientSlice := make([]string, 2)
-		cleanupSlice := make([]string, 2) 
-
-		email := Email{queueID: qID,
-						sender: "",
-						receiver: "",
-						size: 0,
-						date: "",
-						client: clientSlice,
-						cleanup: cleanupSlice,
-						status: "",
-						reason: "",
-						msgID: "",
-						emailType: ""}
-		emailList = append(emailList, email)
-
-	} 
-}
-
-
 // Read data from the file 
 // Split file data by newline
 // Return an array of lines of strings
@@ -191,13 +167,30 @@ func parse(data []string) {
    		qID = postfixID.FindString(data[i])
    		mID = messageID.FindString(data[i])
    		statusRsn = statusReason.FindString(data[i])
-   		
-   		// find the email index in both incoming and outgoing email lists
-   		if qID != "" {
-   			inEmailInx = findEmailIndex(emailIn, qID)
-   			outEmailInx = findEmailIndex(emailOut, qID)
-   		}
 
+   		// adding email to the outgoing email list
+   		if qID != "" {
+   			if !hasEmailID(emailOut, qID) {
+   				// create a new email and initialize it
+   				clientSlice := make([]string, 2)
+   				cleanupSlice := make([]string, 2) 
+
+   				email := Email{queueID: qID,
+			   					sender: "",
+			   					receiver: "",
+			   					size: 0,
+			   					date: "",
+			   					client: clientSlice,
+			   					cleanup: cleanupSlice,
+			   					status: "",
+			   					msgID: "",
+			   					emailType: ""}
+   				emailOut = append(emailOut, email)
+
+   			} 
+   			outEmailInx = findEmailIndex(emailOut, qID)
+   			inEmailInx = findEmailIndex(emailIn, qID)
+   		}
    		// the Host/IP Address of the client connected to the SMTP daemon
    		// inbound email
    		if smtpd != "" {
@@ -269,52 +262,27 @@ func parse(data []string) {
    				if date != "" {
    					emailIn[inEmailInx].date = date
    				}
+
+   				// deal with outgoing email queue manager at the same time
+   				if outEmailInx != -1 {
+   					if from != "" {
+   						emailOut[outEmailInx].sender = from[6: (len(from) - 1)]
+   					}
+   					if size != "" {
+   						msgSize, err := strconv.Atoi(size[5: len(size)])
+   						if err == nil {
+   							emailOut[outEmailInx].size = msgSize
+   						}	
+   					}
+   					if date != "" {
+   						emailOut[outEmailInx].date = date
+   					}
+   				}
    			} 
-   			
-   			// deal with outgoing email queue manager
-   			if outEmailInx != -1 {
-   				if from != "" {
-   					emailOut[outEmailInx].sender = from[6: (len(from) - 1)]
-   				}
-   				if size != "" {
-   					msgSize, err := strconv.Atoi(size[5: len(size)])
-   					if err == nil {
-   						emailOut[outEmailInx].size = msgSize
-   					}	
-   				}
-   				if date != "" {
-   					emailOut[outEmailInx].date = date
-   				}
-   			}
-   			
    		}
 
    		// detailed info about destination, delay, relay and status etc
    		if  smtp != "" {
-   			// adding email to the outgoing email list
-   			if qID != "" {
-   				if !hasEmailID(emailOut, qID) {
-   				// create a new email and initialize it
-   					clientSlice := make([]string, 2)
-   					cleanupSlice := make([]string, 2) 
-
-   					email := Email{queueID: qID,
-   						sender: "",
-   						receiver: "",
-   						size: 0,
-   						date: "",
-   						client: clientSlice,
-   						cleanup: cleanupSlice,
-   						status: "",
-   						msgID: "",
-   						emailType: ""}
-   						emailOut = append(emailOut, email)
-
-   				} 
-   				outEmailInx = findEmailIndex(emailOut, qID)
-   				emailOut[outEmailInx].emailType = outgoing
-   			}
-
    			if to != "" {
    				var endInx = strings.Index(to, ">")
    				var receiver = to[4: endInx]
@@ -329,6 +297,7 @@ func parse(data []string) {
    					emailOut[outEmailInx].receiver = receiver
    					emailOut[outEmailInx].status = status[7:]
    					emailOut[outEmailInx].reason = rsn
+   					emailOut[outEmailInx].emailType = outgoing
    				}
    								
    			}		
@@ -347,6 +316,6 @@ func main() {
 	var data []string = openFile(file)
 	
 	parse(data)
-    printEmail(emailOut)
+	printEmail(emailOut)
 
 }
