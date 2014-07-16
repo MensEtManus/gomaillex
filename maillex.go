@@ -55,7 +55,7 @@ type Email struct {
     receiver   			string       // address of the receiver
     size       			int          // size of the email
     date       			string       // date and time email
-   	client              []string     // client hostname and IP address for inbound email
+    client              []string     // client hostname and IP address for inbound email
     cleanup    			[]string     // store info when inbound email gets cleaned up 
     status     			string       // status of the processed email
     reason              string       // the explanation of the delivery status
@@ -68,6 +68,9 @@ var incoming string = "incoming"
 
 var emailIn  []Email  // global variable for slice of incoming emails
 var emailOut []Email  // global variable for slice of outgoing emails
+
+var emailInMap = map[string]int{}
+var emailOutMap = map[string]int{}
 
 // Statistics Variables
 var deliverTotal, received, delivered, bounced, deferred, rejected float64 = 0, 0, 0, 0, 0, 0
@@ -152,7 +155,8 @@ func parse(data []string) {
    var inEmailInx int = -1  // index of the email in the incoming email list
    var outEmailInx int = -1 // index of the email int the outgoing email list
    var statusRsn string     // reason of the email delivery status
-
+   var mapInIndex int = 0
+   var mapOutIndex int = 0
    // Loop through all the lines to obtain info needed
    for i := 0; i < len(data); i++ {
 
@@ -173,26 +177,41 @@ func parse(data []string) {
 
    		// adding email to the outgoing email list
    		if qID != "" {
-   			if !hasEmailID(emailOut, qID) {
-   				// create a new email and initialize it
-   				clientSlice := make([]string, 2)
-   				cleanupSlice := make([]string, 2) 
+            inInx, inOk := emailInMap[qID]
+            outInx, outOk := emailOutMap[qID]
 
-   				email := Email{queueID: qID,
-			   					sender: "",
-			   					receiver: "",
-			   					size: 0,
-			   					date: "",
-			   					client: clientSlice,
-			   					cleanup: cleanupSlice,
-			   					status: "",
-			   					msgID: "",
-			   					emailType: ""}
-   				emailOut = append(emailOut, email)
+            if outOk == false {
+               // create a new email and initialize it
+               clientSlice := make([]string, 2)
+               cleanupSlice := make([]string, 2) 
 
-   			} 
-   			outEmailInx = findEmailIndex(emailOut, qID)
-   			inEmailInx = findEmailIndex(emailIn, qID)
+               email := Email{queueID: qID,
+                           sender: "",
+                           receiver: "",
+                           size: 0,
+                           date: "",
+                           client: clientSlice,
+                           cleanup: cleanupSlice,
+                           status: "",
+                           msgID: "",
+                           emailType: ""}
+               emailOut = append(emailOut, email)
+               emailOutMap[qID] = mapOutIndex
+               mapOutIndex++
+            }
+   			
+   			if outOk == true {
+               outEmailInx = outInx 
+            } else {
+               outEmailInx = -1
+            }
+            
+            if inOk == true {
+               inEmailInx = inInx 
+            } else {
+               inEmailInx = -1
+            }
+   			
    		}
    		// the Host/IP Address of the client connected to the SMTP daemon
    		// inbound email
@@ -200,26 +219,31 @@ func parse(data []string) {
    			
    			if qID != "" {
    			//	addEmail(emailIn, qID)
-   				if !hasEmailID(emailIn, qID) {
+               inInx, inOk := emailInMap[qID]
+   				if inOk == false {
    				// create a new email and initialize it
    					clientSlice := make([]string, 2)
    					cleanupSlice := make([]string, 2) 
 
    					email := Email{queueID: qID,
-   						sender: "",
-   						receiver: "",
-   						size: 0,
-   						date: "",
-   						client: clientSlice,
-   						cleanup: cleanupSlice,
-   						status: "",
-   						msgID: "",
-   						emailType: ""}
-   						emailIn = append(emailIn, email)
-
-   					} 
-   				inEmailInx = findEmailIndex(emailIn, qID)
-   				
+               						sender: "",
+               						receiver: "",
+               						size: 0,
+               						date: "",
+               						client: clientSlice,
+               						cleanup: cleanupSlice,
+               						status: "",
+               						msgID: "",
+               						emailType: ""}
+   					emailIn = append(emailIn, email)
+                  emailInMap[qID] = mapInIndex
+                  mapInIndex++
+   				} 
+   				if inOk == true {
+                  inEmailInx = inInx  
+               } else {
+                  inEmailInx = -1
+               }
    			}
    			if client != "" {
    				
