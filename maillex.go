@@ -55,12 +55,12 @@ type Email struct {
     receiver   			string       // address of the receiver
     size       			int          // size of the email
     date       			string       // date and time email
-   	client              []string     // client hostname and IP address for inbound email
+    client              []string     // client hostname and IP address for inbound email
     cleanup    			[]string     // store info when inbound email gets cleaned up 
     status     			string       // status of the processed email
     reason              string       // the explanation of the delivery status
     msgID      			string       // message id of the inbound email
-  	emailType  			string       // outgoing email or incoming 
+  	 emailType  			string       // outgoing email or incoming 
 }
 // email type vars
 var outgoing string = "outgoing"
@@ -173,6 +173,7 @@ func parse(data []string) {
 
    		// adding email to the outgoing email list
    		if qID != "" {
+   		//	fmt.Println("parsing queue ID...")
    			if !hasEmailID(emailOut, qID) {
    				// create a new email and initialize it
    				clientSlice := make([]string, 2)
@@ -193,11 +194,12 @@ func parse(data []string) {
    			} 
    			outEmailInx = findEmailIndex(emailOut, qID)
    			inEmailInx = findEmailIndex(emailIn, qID)
+   			
    		}
    		// the Host/IP Address of the client connected to the SMTP daemon
    		// inbound email
    		if smtpd != "" {
-   			
+   		//	fmt.Println("parsing smtpd...")
    			if qID != "" {
    			//	addEmail(emailIn, qID)
    				if !hasEmailID(emailIn, qID) {
@@ -217,7 +219,7 @@ func parse(data []string) {
    						emailType: ""}
    						emailIn = append(emailIn, email)
 
-   					} 
+   				} 
    				inEmailInx = findEmailIndex(emailIn, qID)
    				
    			}
@@ -241,6 +243,7 @@ func parse(data []string) {
 
    		// the msg id of the currently processed email
    		if cleanup != "" {
+   		//	fmt.Println("parsing cleanup...")
    			if mID != "" {
    				if inEmailInx != -1 {
    					emailIn[inEmailInx].msgID = mID
@@ -251,6 +254,7 @@ func parse(data []string) {
 
    		// the time an email was removed from que or its size, sender and number of recipients
    		if qmgr != "" {
+   		//	fmt.Println("parsing qmgr...")
    			// deal with incoming email
    			if inEmailInx != -1 {
    				if from != "" {
@@ -286,6 +290,7 @@ func parse(data []string) {
 
    		// detailed info about destination, delay, relay and status etc
    		if  smtp != "" {
+   		//	fmt.Println("parsing smtp...")
    			if to != "" {
    				var endInx = strings.Index(to, ">")
    				var receiver = to[4: endInx]
@@ -340,6 +345,7 @@ func printGrand() {
 	fmt.Println()
 	fmt.Println("Grand Total Information")
 	fmt.Println("------------------------")
+   fmt.Printf("Delivery Total: %6v\n", deliverTotal)
 	fmt.Printf(" %6v    Received\n", received)
 	fmt.Printf(" %6v    Delivered\n", delivered)
 	fmt.Printf(" %6v    Deferred\n", deferred)
@@ -349,8 +355,8 @@ func printGrand() {
 	fmt.Printf(" %6d    bytes delivered\n", sntMailSize)
 	fmt.Printf(" %6d    bytes received\n", rcvMailSize)
 	fmt.Println()
-	fmt.Printf("Bounce Rates %6.2f%%\n", bounceRate)
-	fmt.Printf("Rejection Rates %6.2f%%\n", rejectRate)
+	fmt.Printf("Bounce Rates %6.3f%%\n", bounceRate)
+	fmt.Printf("Rejection Rates %6.3f%%\n", rejectRate)
 	fmt.Println()
 
 }
