@@ -50,16 +50,17 @@ var statusReason = regexp.MustCompile(reasonRegex)
 
 // email struct to hold info about one email
 type Email struct {
-    queueID    			string       // message id processed by Postfix
-    sender     			string 	     // address of the sender
-    receiver   			string       // address of the receiver
-    size       			int          // size of the email
-    date       			string       // date and time email
-    client              []string     // client hostname and IP address for inbound email
-    cleanup    			[]string     // store info when inbound email gets cleaned up 
-    status     			string       // status of the processed email
-    reason              string       // the explanation of the delivery status
-    msgID      			string       // message id of the inbound email
+   queueID    			string       // message id processed by Postfix
+   sender     			string 	    // address of the sender
+   receiver   			string       // address of the receiver
+   rcpDomain         string       // domain of the receipient 
+   size       			int          // size of the email
+   date       			string       // date and time email
+   client            []string     // client hostname and IP address for inbound email
+   cleanup    			[]string     // store info when inbound email gets cleaned up 
+   status     			string       // status of the processed email
+   reason            string       // the explanation of the delivery status
+   msgID      			string       // message id of the inbound email
   	emailType  			string       // outgoing email or incoming 
 }
 // email type vars
@@ -69,8 +70,12 @@ var incoming string = "incoming"
 var emailIn  []Email  // global variable for slice of incoming emails
 var emailOut []Email  // global variable for slice of outgoing emails
 
+// maps to store email indexes in the email slice
 var emailInMap = map[string]int{}
 var emailOutMap = map[string]int{}
+
+// map storing receipients domain and count
+var domainMap = map[string]int{}
 
 // Statistics Variables
 var deliverTotal, received, delivered, bounced, deferred, rejected float64 = 0, 0, 0, 0, 0, 0
@@ -88,27 +93,6 @@ func check(e error) {
 	}
 }
 
-// check if the queue ID already exists in the email list
-func hasEmailID(list []Email, id string) bool {
-	for _, email := range list {
-		if email.queueID == id {
-			return true
-		}
-	}
-	return false
-}
-
-// find the index of an email in the email list
-func findEmailIndex(list []Email, id string) int {
-	var index int = -1
-	for i, email := range list {
-		if email.queueID == id {
-			index = i
-		}
-	}
-	return index 
-}
-
 // print info in Email 
 func printEmail(emails []Email) {
 	fmt.Println("                           Email List Info")
@@ -117,6 +101,7 @@ func printEmail(emails []Email) {
 		fmt.Println(i)
 		fmt.Println("From: " + email.sender)
 		fmt.Println("To: " + email.receiver)
+      fmt.Println("Domain: " + email.rcpDomain)
 		fmt.Print("Size: ")
 		fmt.Println(email.size)
 		fmt.Println("Date: " + email.date)
@@ -124,6 +109,7 @@ func printEmail(emails []Email) {
 		fmt.Println("Reason: " + email.reason)
 		fmt.Println("Host Name: " + email.client[0])
 		fmt.Println("IP address: " + email.client[1])
+      fmt.Println("Message ID: " + email.msgID)
 		fmt.Println("In/Out: " + email.emailType)
 		fmt.Println()
 	}	
@@ -186,15 +172,16 @@ func parse(data []string) {
                cleanupSlice := make([]string, 2) 
 
                email := Email{queueID: qID,
-                           sender: "",
-                           receiver: "",
-                           size: 0,
-                           date: "",
-                           client: clientSlice,
-                           cleanup: cleanupSlice,
-                           status: "",
-                           msgID: "",
-                           emailType: ""}
+                              sender: "",
+                              receiver: "",
+                              rcpDomain: "",
+                              size: 0,
+                              date: "",
+                              client: clientSlice,
+                              cleanup: cleanupSlice,
+                              status: "",
+                              msgID: "",
+                              emailType: ""}
                emailOut = append(emailOut, email)
                emailOutMap[qID] = mapOutIndex
                mapOutIndex++
@@ -228,6 +215,7 @@ func parse(data []string) {
    					email := Email{queueID: qID,
                						sender: "",
                						receiver: "",
+                                 rcpDomain: "",
                						size: 0,
                						date: "",
                						client: clientSlice,
@@ -246,7 +234,8 @@ func parse(data []string) {
                }
    			}
    			if client != "" {
-   				
+   				inEmailInx = emailInMap[qID]
+               outEmailInx = emailOutMap[qID]
    				startHost := strings.Index(client, "=") + 1
    				startIP := strings.Index(client, "[") + 1
    				endHost := startIP - 1
@@ -254,11 +243,14 @@ func parse(data []string) {
    				hostname := client[startHost: endHost]
    				IPaddress := client[startIP: endIP]
    				hostIP := []string{hostname, IPaddress}
-
-   				if inEmailInx != -1 {
+   				if inEmailInx != -1 {                
    					emailIn[inEmailInx].client[0] = hostIP[0]
    					emailIn[inEmailInx].client[1] = hostIP[1]
    					emailIn[inEmailInx].emailType = incoming	
+                  if outEmailInx != -1 {
+                     emailOut[outEmailInx].client[0] = hostIP[0]
+                     emailOut[outEmailInx].client[1] = hostIP[1]
+                  }
    				}				
    			}
    		}
@@ -268,7 +260,9 @@ func parse(data []string) {
    			if mID != "" {
    				if inEmailInx != -1 {
    					emailIn[inEmailInx].msgID = mID
-   			
+   			      if outEmailInx != -1 {
+                     emailOut[outEmailInx].msgID = mID
+                  }
    				}
    			}
    		}
@@ -315,6 +309,10 @@ func parse(data []string) {
    				var receiver = to[4: endInx]
    				var rsnStart, rsnEnd int
    				var rsn string 
+               var domainName string 
+               var dstart = strings.Index(to, "@") + 1
+               domainName = to[dstart:endInx]
+
    				if statusRsn != "" {
    					rsnStart = strings.Index(statusRsn, "(") + 1
    					rsnEnd = len(statusRsn) - 1
@@ -322,6 +320,13 @@ func parse(data []string) {
    				}
    				if outEmailInx != -1 {
    					emailOut[outEmailInx].receiver = receiver
+                  emailOut[outEmailInx].rcpDomain = domainName
+                  _, ok := domainMap[domainName]
+                  if ok {
+                     domainMap[domainName]++
+                  } else {
+                     domainMap[domainName] = 1
+                  }
    					emailOut[outEmailInx].status = status[7:]
    					emailOut[outEmailInx].reason = rsn
    					emailOut[outEmailInx].emailType = outgoing
@@ -359,6 +364,8 @@ func analyzeGrand() {
 	rejectRate = rejected / deliverTotal
 }
 
+// Analyze collected data for Top Domain
+
 // Print grand total statistics regarding delivery results
 func printGrand() {
 	fmt.Println()
@@ -390,7 +397,7 @@ func main() {
 	var data []string = openFile(file)
 	
 	parse(data)
-//	printEmail(emailOut)
+	printEmail(emailOut)
 	analyzeGrand()
 	printGrand()
 
