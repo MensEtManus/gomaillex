@@ -44,7 +44,7 @@ var statusReason = regexp.MustCompile(reasonRegex)
 
 /**************************************************
  *
- * Data Structures to hold Important Information
+ *   Data Structures to hold Email Information
  *
 ***************************************************/
 
@@ -69,7 +69,10 @@ var incoming string = "incoming"
 var emailIn  []Email  // global variable for slice of incoming emails
 var emailOut []Email  // global variable for slice of outgoing emails
 
-
+// Statistics Variables
+var deliverTotal, received, delivered, bounced, deferred, rejected float64 = 0, 0, 0, 0, 0, 0
+var sntMailSize, rcvMailSize int = 0, 0  // received and delivered email total size
+var bounceRate, rejectRate float64       // bounce rates and rejection rates 
 
 func usage() {
 	fmt.Printf(usageMsg)
@@ -305,6 +308,53 @@ func parse(data []string) {
    }
 }
 
+// Analyze collected data for Grand Total Delivery Info
+func analyzeGrand() {
+	// analyze outgoing emails delivery results
+	for _, email := range emailOut {
+		if strings.ToLower(email.status) == "sent" {
+			delivered++
+			sntMailSize += email.size
+		} else if strings.ToLower(email.status) == "deferred" {
+			deferred++
+		} else if strings.ToLower(email.status) == "bounced" {
+			bounced++
+		} else if strings.ToLower(email.status) == "rejected" {
+			rejected++
+		}
+	}
+
+	received = float64(len(emailIn))
+	deliverTotal = float64(len(emailOut))
+
+	for _, email := range emailIn {
+		rcvMailSize += email.size
+	}
+
+	bounceRate = bounced / deliverTotal
+	rejectRate = rejected / deliverTotal
+}
+
+// Print grand total statistics regarding delivery results
+func printGrand() {
+	fmt.Println()
+	fmt.Println("Grand Total Information")
+	fmt.Println("------------------------")
+	fmt.Printf(" %6v    Received\n", received)
+	fmt.Printf(" %6v    Delivered\n", delivered)
+	fmt.Printf(" %6v    Deferred\n", deferred)
+	fmt.Printf(" %6v    Bounced\n", bounced)
+	fmt.Printf(" %6v    Rejected\n", rejected)
+	fmt.Println()
+	fmt.Printf(" %6d    bytes delivered\n", sntMailSize)
+	fmt.Printf(" %6d    bytes received\n", rcvMailSize)
+	fmt.Println()
+	fmt.Printf("Bounce Rates %6.2f%%\n", bounceRate)
+	fmt.Printf("Rejection Rates %6.2f%%\n", rejectRate)
+	fmt.Println()
+
+}
+
 func main() {
 	args := os.Args
 	fmt.Printf("\n")
@@ -316,6 +366,8 @@ func main() {
 	var data []string = openFile(file)
 	
 	parse(data)
-	printEmail(emailOut)
+//	printEmail(emailOut)
+	analyzeGrand()
+	printGrand()
 
 }
