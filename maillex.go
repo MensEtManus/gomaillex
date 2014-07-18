@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"strconv"
+   "sort"
 )
 
 const usageMsg string = "usage: gomaillex maillog[filename] -option\n" + 
@@ -364,7 +365,56 @@ func analyzeGrand() {
 	rejectRate = rejected / deliverTotal
 }
 
+
+/*****************************************
+ *
+ * Sorting map[string]int by values
+ *
+ *****************************************/
+
+type ValSorter struct {
+        Keys []string
+        Vals []int
+}
+ 
+func NewValSorter(m map[string]int) *ValSorter {
+        vs := &ValSorter{
+                Keys: make([]string, 0, len(m)),
+                Vals: make([]int, 0, len(m)),
+        }
+        for k, v := range m {
+                vs.Keys = append(vs.Keys, k)
+                vs.Vals = append(vs.Vals, v)
+        }
+        return vs
+}
+ 
+func (vs *ValSorter) Sort() {
+        sort.Sort(vs)
+}
+
+func (vs *ValSorter) Len() int { return len(vs.Vals) }
+
+func (vs *ValSorter) Less(i, j int) bool { return vs.Vals[i] < vs.Vals[j] }
+
+func (vs *ValSorter) Swap(i, j int) {
+   vs.Vals[i], vs.Vals[j] = vs.Vals[j], vs.Vals[i]
+   vs.Keys[i], vs.Keys[j] = vs.Keys[j], vs.Keys[i]
+}
+
 // Analyze collected data for Top Domain
+func domainAnalysis() {
+   topDomain := NewValSorter(domainMap)
+   topDomain.Sort()
+   fmt.Println("Top Domains:")
+   fmt.Println("-------------------------------")
+   fmt.Println("Domain Cnt         Domain Name")
+   fmt.Println("----------         -----------")
+   for i := len(topDomain.Keys) - 1; i >= 0; i-- {
+      fmt.Printf(" %v               %6s\n", topDomain.Vals[i], topDomain.Keys[i])
+   }
+
+}
 
 // Print grand total statistics regarding delivery results
 func printGrand() {
@@ -397,8 +447,8 @@ func main() {
 	var data []string = openFile(file)
 	
 	parse(data)
-	printEmail(emailOut)
+//	printEmail(emailOut)
 	analyzeGrand()
 	printGrand()
-
+   domainAnalysis()
 }
