@@ -83,6 +83,49 @@ var deliverTotal, received, delivered, bounced, deferred, rejected float64 = 0, 
 var sntMailSize, rcvMailSize int = 0, 0  // received and delivered email total size
 var bounceRate, rejectRate float64       // bounce rates and rejection rates 
 
+
+/*****************************************
+ *
+ * Sorting map[string]int by values
+ *
+ *****************************************/
+
+type ValSorter struct {
+        Keys []string
+        Vals []int
+}
+ 
+func NewValSorter(m map[string]int) *ValSorter {
+    vs := &ValSorter{
+     Keys: make([]string, 0, len(m)),
+     Vals: make([]int, 0, len(m)),
+   }
+   for k, v := range m {
+     vs.Keys = append(vs.Keys, k)
+     vs.Vals = append(vs.Vals, v)
+   }
+   return vs
+}
+ 
+func (vs *ValSorter) Sort() {
+   sort.Sort(vs)
+}
+
+func (vs *ValSorter) Len() int { return len(vs.Vals) }
+
+func (vs *ValSorter) Less(i, j int) bool { return vs.Vals[i] < vs.Vals[j] }
+
+func (vs *ValSorter) Swap(i, j int) {
+   vs.Vals[i], vs.Vals[j] = vs.Vals[j], vs.Vals[i]
+   vs.Keys[i], vs.Keys[j] = vs.Keys[j], vs.Keys[i]
+}
+
+/***************************************************
+ *
+ * Various functions for Parsing and Analyzing Data
+ *
+ ***************************************************/
+
 func usage() {
 	fmt.Printf(usageMsg)
 	os.Exit(1)
@@ -365,42 +408,6 @@ func analyzeGrand() {
 	rejectRate = rejected / deliverTotal
 }
 
-
-/*****************************************
- *
- * Sorting map[string]int by values
- *
- *****************************************/
-
-type ValSorter struct {
-        Keys []string
-        Vals []int
-}
- 
-func NewValSorter(m map[string]int) *ValSorter {
-        vs := &ValSorter{
-                Keys: make([]string, 0, len(m)),
-                Vals: make([]int, 0, len(m)),
-        }
-        for k, v := range m {
-                vs.Keys = append(vs.Keys, k)
-                vs.Vals = append(vs.Vals, v)
-        }
-        return vs
-}
- 
-func (vs *ValSorter) Sort() {
-        sort.Sort(vs)
-}
-
-func (vs *ValSorter) Len() int { return len(vs.Vals) }
-
-func (vs *ValSorter) Less(i, j int) bool { return vs.Vals[i] < vs.Vals[j] }
-
-func (vs *ValSorter) Swap(i, j int) {
-   vs.Vals[i], vs.Vals[j] = vs.Vals[j], vs.Vals[i]
-   vs.Keys[i], vs.Keys[j] = vs.Keys[j], vs.Keys[i]
-}
 
 // Analyze collected data for Top Domain
 func domainAnalysis() {
