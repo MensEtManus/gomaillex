@@ -434,8 +434,20 @@ func printGrand() {
 	fmt.Printf(" %6v    Bounced\n", bounced)
 	fmt.Printf(" %6v    Rejected\n", rejected)
 	fmt.Println()
-	fmt.Printf(" %6d    bytes delivered\n", sntMailSize)
-	fmt.Printf(" %6d    bytes received\n", rcvMailSize)
+   if rcvMailSize > 1024 {
+      rcvMailSize /= 1024
+      fmt.Printf(" %6dk    bytes received\n", rcvMailSize)
+   } else {
+      fmt.Printf(" %6d    bytes received\n", rcvMailSize)
+   }
+
+   if sntMailSize > 1024 {
+      sntMailSize /= 1024
+      fmt.Printf(" %6dk    bytes delivered\n", sntMailSize)
+   } else {
+      fmt.Printf(" %6d    bytes delivered\n", sntMailSize)
+   }
+	
 	fmt.Println()
 	fmt.Printf("Bounce Rates %6.2f%%\n", bounceRate)
 	fmt.Printf("Rejection Rates %6.2f%%\n", rejectRate)
