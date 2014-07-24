@@ -64,6 +64,7 @@ type Email struct {
    msgID      			string       // message id of the inbound email
   	emailType  			string       // outgoing email or incoming 
 }
+
 // email type vars
 var outgoing string = "outgoing"
 var incoming string = "incoming"
@@ -409,7 +410,7 @@ func analyzeGrand() {
 }
 
 
-// Analyze collected data for Top Domain
+// Analyze collected data for Top Domains
 func domainAnalysis() {
    topDomain := NewValSorter(domainMap)
    topDomain.Sort()
@@ -420,8 +421,36 @@ func domainAnalysis() {
    for i := len(topDomain.Keys) - 1; i >= 0; i-- {
       fmt.Printf(" %v               %6s\n", topDomain.Vals[i], topDomain.Keys[i])
    }
-
+   fmt.Println()
 }
+
+// Analyze data for hourly and time report
+func hourReport() {
+   fmt.Println("Hourly Report")
+   fmt.Println("---------------------------------")
+   var month string = ""
+   var day string = ""
+   var hour string = ""
+   for i, email := range emailOut {
+      
+
+   }
+}
+
+// Analyze bounced email
+func bounceReport() {
+   fmt.Println("Bounce Report")
+   fmt.Println("---------------------------------------------------")
+   for _, email := range emailOut {
+      if strings.ToLower(email.status) == "bounced" {
+         fmt.Printf("Email sent to '%v' bounced\n", email.receiver)
+         fmt.Printf("Reason: %v\n", email.reason)
+         fmt.Println()
+      }
+   }
+}
+
+
 
 // Print grand total statistics regarding delivery results
 func printGrand() {
@@ -434,14 +463,14 @@ func printGrand() {
 	fmt.Printf(" %6v    Bounced\n", bounced)
 	fmt.Printf(" %6v    Rejected\n", rejected)
 	fmt.Println()
-   if rcvMailSize > 1024 {
+   if rcvMailSize > 10000 {
       rcvMailSize /= 1024
       fmt.Printf(" %6dk    bytes received\n", rcvMailSize)
    } else {
       fmt.Printf(" %6d    bytes received\n", rcvMailSize)
    }
 
-   if sntMailSize > 1024 {
+   if sntMailSize > 10000 {
       sntMailSize /= 1024
       fmt.Printf(" %6dk    bytes delivered\n", sntMailSize)
    } else {
@@ -466,8 +495,17 @@ func main() {
 	var data []string = openFile(file)
 	
 	parse(data)
-//	printEmail(emailOut)
+
+	printEmail(emailOut)
+
 	analyzeGrand()
+
 	printGrand()
+
    domainAnalysis()
+
+   bounceReport()
+
+   hourReport()
+
 }
